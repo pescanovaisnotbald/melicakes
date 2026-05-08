@@ -47,21 +47,6 @@ export function About() {
               </div>
             </div>
 
-            {/* Small teaser image below */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.7, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="mt-4 rounded-[1.5rem] p-1 bg-foreground/[0.025] ring-1 ring-foreground/[0.06]"
-            >
-              <div className="rounded-[calc(1.5rem-4px)] overflow-hidden">
-                <img
-                  src="/img/cupaces.jpg"
-                  alt="Cupcakes artesanales Meli&Cakes"
-                  className="w-full h-40 object-cover object-top"
-                />
-              </div>
-            </motion.div>
           </div>
 
           {/* Right — editorial text + features */}
