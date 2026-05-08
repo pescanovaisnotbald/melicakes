@@ -22,7 +22,7 @@ const products = [
     name: "Cupcakes del Día",
     category: "Cupcakes",
     description: "Recién horneados y expuestos en nuestra vitrina de Terrassa.",
-    img: "/img/hero.jpeg",
+    img: "/img/cupaces.jpg",
     imgPosition: "object-center",
     span: "lg:col-span-3",
     imgClass: "h-52",

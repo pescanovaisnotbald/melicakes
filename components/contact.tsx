@@ -9,6 +9,7 @@ export function Contact() {
   const isInView = useInView(ref, { once: true, margin: "-80px" });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
 
   function validate(form: HTMLFormElement) {
     const data = new FormData(form);
@@ -22,12 +23,31 @@ export function Contact() {
     return errs;
   }
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const errs = validate(e.currentTarget);
+    const form = e.currentTarget;
+    const errs = validate(form);
     setErrors(errs);
-    if (Object.keys(errs).length === 0) {
-      // Form ready to submit
+    if (Object.keys(errs).length > 0) return;
+
+    const data = new FormData(form);
+    setStatus("loading");
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: String(data.get("name")).trim(),
+          phone: String(data.get("phone")).trim(),
+          email: String(data.get("email")).trim(),
+          message: String(data.get("message")).trim(),
+        }),
+      });
+      if (!res.ok) throw new Error();
+      setStatus("success");
+      form.reset();
+    } catch {
+      setStatus("error");
     }
   }
 
@@ -148,6 +168,30 @@ export function Contact() {
                 <h3 className="font-serif text-2xl font-medium text-foreground mb-7">
                   Envíanos un mensaje
                 </h3>
+                {status === "success" ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    className="py-12 flex flex-col items-center text-center gap-4"
+                  >
+                    <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-primary">
+                        <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </div>
+                    <h4 className="font-serif text-xl text-foreground font-medium">¡Mensaje enviado!</h4>
+                    <p className="text-sm text-muted-foreground max-w-[30ch]">
+                      Nos pondremos en contacto contigo en breve.
+                    </p>
+                    <button
+                      onClick={() => setStatus("idle")}
+                      className="mt-2 text-xs text-primary underline underline-offset-2"
+                    >
+                      Enviar otro mensaje
+                    </button>
+                  </motion.div>
+                ) : (
                 <form onSubmit={handleSubmit} className="space-y-5" noValidate>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
@@ -206,13 +250,29 @@ export function Contact() {
                     <p className="mt-1 text-xs text-destructive min-h-[1rem]">{errors.message ?? ""}</p>
                   </div>
 
+                  {status === "error" && (
+                    <p className="text-xs text-destructive text-center">
+                      Ha ocurrido un error. Inténtalo de nuevo o escríbenos directamente.
+                    </p>
+                  )}
+
                   <button
                     type="submit"
-                    className="w-full py-3.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.99]"
+                    disabled={status === "loading"}
+                    className="w-full py-3.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    Enviar Mensaje
+                    {status === "loading" ? (
+                      <>
+                        <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeOpacity="0.25" />
+                          <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                        </svg>
+                        Enviando…
+                      </>
+                    ) : "Enviar Mensaje"}
                   </button>
                 </form>
+                )}
               </div>
             </div>
           </motion.div>
