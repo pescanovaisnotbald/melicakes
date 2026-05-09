@@ -160,7 +160,7 @@ export function Reviews() {
         <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-24 z-10 bg-gradient-to-l from-card to-transparent" />
 
         <div className="flex overflow-hidden">
-          <div className="flex animate-marquee hover:[animation-play-state:paused] py-4">
+          <div className="flex animate-marquee py-4">
             {/* Duplicate the list for seamless loop */}
             {[...reviews, ...reviews].map((review, i) => (
               <ReviewCard key={`${review.id}-${i}`} review={review} />

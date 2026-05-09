@@ -137,6 +137,9 @@
   animation: marquee 40s linear infinite;
   will-change: transform;
 }
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
 
 /* Film grain overlay — fixed, pointer-events-none, Editorial Luxury texture */
 body::after {
