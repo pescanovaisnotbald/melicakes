@@ -5,7 +5,7 @@ import { useRef, useEffect, useState } from "react";
 import { Star } from "@phosphor-icons/react";
 
 const GOOGLE_REVIEWS_URL =
-  "https://www.google.com/maps/place/Meli%26Cakes/@41.5772853,2.0106689,17z/data=!4m15!1m8!3m7!1s0x12a492cec7fdca07:0xe730b57d2c8df3aa!2sCarrer+dels+Voluntaris,+44,+08225+Terrassa,+Barcelona!3b1!8m2!3d41.5772853!4d2.0132438!16s%2Fg%2F11snpg2xlz!3m5!1s0x12a493379d3d6315:0x368e96599e702383!8m2!3d41.577356!4d2.013275!16s%2Fg%2F11sfhr40r0?entry=ttu&g_ep=EgoyMDI2MDUwNi4wIKXMDSoASAFQAw%3D%3D";
+  "https://www.google.com/maps/place/Meli%26Cakes/@41.577356,2.013275,17z/data=!4m6!3m5!1s0x12a493379d3d6315:0x368e96599e702383!8m2!3d41.577356!4d2.013275!16s%2Fg%2F11sfhr40r0!9m1!1b1";
 
 const reviews = [
   {
