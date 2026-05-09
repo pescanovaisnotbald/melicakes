@@ -128,7 +128,12 @@ export function Contact() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground mb-0.5">Horario</p>
-                  <p className="text-sm text-foreground">Lun – Sáb: 9:00 – 20:00</p>
+                  <div className="text-sm text-foreground space-y-0.5">
+                    <p>Lun: 16:30 – 20:00</p>
+                    <p>Mar – Vie: 9:30 – 13:30, 16:30 – 20:00</p>
+                    <p>Sáb: 9:00 – 13:00</p>
+                    <p>Dom: Cerrado</p>
+                  </div>
                 </div>
               </motion.div>
             </div>
