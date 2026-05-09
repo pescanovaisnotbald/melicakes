@@ -256,18 +256,12 @@ export function Reviews() {
 
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <img
-                              src={review.avatar}
-                              alt={review.name}
-                              width={40}
-                              height={40}
-                              draggable={false}
-                              className="w-10 h-10 rounded-full object-cover ring-2 ring-border"
-                            />
-                            <div>
-                              <p className="text-sm font-medium text-foreground">{review.name}</p>
-                              <p className="text-xs text-muted-foreground">{review.date}</p>
+                            <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                              <svg viewBox="0 0 24 24" className="w-5 h-5 text-primary/40" fill="currentColor">
+                                <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+                              </svg>
                             </div>
+                            <p className="text-xs text-muted-foreground">{review.date}</p>
                           </div>
                           {/* Google G icon */}
                           <svg viewBox="0 0 24 24" className="w-5 h-5 opacity-30 group-hover:opacity-60 transition-opacity duration-300 shrink-0" aria-hidden="true">
