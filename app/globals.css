@@ -128,6 +128,16 @@
   }
 }
 
+/* Infinite marquee for reviews */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 40s linear infinite;
+  will-change: transform;
+}
+
 /* Film grain overlay — fixed, pointer-events-none, Editorial Luxury texture */
 body::after {
   content: '';
