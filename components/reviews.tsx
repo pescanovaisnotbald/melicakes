@@ -279,7 +279,7 @@ export function Reviews() {
                         </div>
                       </div>
                     </div>
-                  </button>
+                  </a>
                 </div>
               ))}
             </div>
