@@ -23,7 +23,7 @@ export function Header() {
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         className="fixed top-5 inset-x-0 z-50 flex justify-center px-4"
       >
-        <nav className="flex items-center gap-6 rounded-full bg-background/75 backdrop-blur-xl border border-foreground/10 px-5 py-2.5 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)]">
+        <nav className="flex items-center gap-6 rounded-full bg-primary/20 backdrop-blur-xl border border-primary/30 px-5 py-2.5 shadow-[0_8px_32px_-8px_rgba(194,86,107,0.18)]">
           {/* Logo */}
           <a
             href="#inicio"
@@ -82,7 +82,7 @@ export function Header() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 z-40 bg-background/95 backdrop-blur-2xl flex flex-col items-center justify-center gap-2 md:hidden"
+            className="fixed inset-0 z-40 bg-primary/10 backdrop-blur-2xl flex flex-col items-center justify-center gap-2 md:hidden"
             onClick={() => setOpen(false)}
           >
             {navLinks.map((link, i) => (
