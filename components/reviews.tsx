@@ -1,8 +1,11 @@
 "use client";
 
 import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Star } from "@phosphor-icons/react";
+
+const GOOGLE_REVIEWS_URL =
+  "https://www.google.com/maps/place/Meli+%26+Cakes/@41.5629,2.0038,17z/data=!4m8!3m7!1s0x12a4968b9b9b9b9b:0x0!8m2!3d41.5629!4d2.0038!9m1!1b1";
 
 const reviews = [
   {
@@ -49,7 +52,7 @@ const reviews = [
     id: 6,
     name: "Ana Romero",
     rating: 5,
-    text: "Pedí una tarta temática de Stranger Things y quedó increíble. A mi hijo le encantó, fue la estrella de la fiesta. Muchas gracias por hacer su día tan especial.",
+    text: "Pedí una tarta temática de Stranger Things y quedó increíble. A mi hijo le encantó, fue la estrella de la fiesta. Muchas gracias.",
     date: "Hace 4 meses",
     avatar: "https://i.pravatar.cc/64?u=ana-romero",
   },
@@ -71,56 +74,100 @@ const reviews = [
   },
 ];
 
-function ReviewCard({ review }: { review: typeof reviews[0] }) {
-  return (
-    <div className="w-[320px] shrink-0 rounded-[2rem] p-1.5 bg-foreground/[0.025] ring-1 ring-foreground/[0.07] mx-3">
-      <div className="rounded-[calc(2rem-6px)] bg-background p-7 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9)] relative">
-        {/* Quotation mark */}
-        <svg
-          className="w-8 h-8 text-primary/25 absolute top-6 right-7"
-          viewBox="0 0 32 32"
-          fill="currentColor"
-          aria-hidden="true"
-        >
-          <path d="M7 8C4.8 8 3 9.8 3 12s1.8 4 4 4c.6 0 1.1-.1 1.6-.3C8.2 17 7 18.9 7 21h3c0-3.9 3.2-7 6-7v-3c-2.5 0-4.8 1.1-6.3 2.9C9.3 13.4 9 12.7 9 12c0-1.1.9-2 2-2V8H7zm16 0c-2.2 0-4 1.8-4 4s1.8 4 4 4c.6 0 1.1-.1 1.6-.3-.4 1.3-1.6 3.3-1.6 5.3h3c0-3.9 3.2-7 6-7v-3c-2.5 0-4.8 1.1-6.3 2.9C25.3 13.4 25 12.7 25 12c0-1.1.9-2 2-2V8h-4z" />
-        </svg>
-
-        <div className="flex mb-4">
-          {[...Array(review.rating)].map((_, i) => (
-            <Star key={i} weight="fill" className="w-3.5 h-3.5 text-primary" />
-          ))}
-        </div>
-
-        <p className="text-foreground leading-relaxed mb-7 text-[0.93rem] min-h-[80px]">
-          &ldquo;{review.text}&rdquo;
-        </p>
-
-        <div className="flex items-center gap-3">
-          <img
-            src={review.avatar}
-            alt={review.name}
-            width={40}
-            height={40}
-            className="w-10 h-10 rounded-full object-cover ring-2 ring-border"
-          />
-          <div>
-            <p className="text-sm font-medium text-foreground">{review.name}</p>
-            <p className="text-xs text-muted-foreground">{review.date}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+const ITEM_W  = 320;
+const GAP     = 16;
+const STEP    = ITEM_W + GAP;
+const SINGLE_W = reviews.length * STEP;
+const ALL     = [...reviews, ...reviews, ...reviews];
 
 export function Reviews() {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-80px" });
+  const sectionRef = useRef(null);
+  const isInView   = useInView(sectionRef, { once: true, margin: "-80px" });
+
+  const outerRef   = useRef<HTMLDivElement>(null);
+  const trackRef   = useRef<HTMLDivElement>(null);
+  const itemRefs   = useRef<(HTMLDivElement | null)[]>([]);
+  const cwRef      = useRef(1100);
+
+  const off        = useRef(-SINGLE_W);
+  const vel        = useRef(0);
+  const isDrag     = useRef(false);
+  const didMove    = useRef(false);
+  const startX     = useRef(0);
+  const prevX      = useRef(0);
+  const paused     = useRef(false);
+
+  const norm = (o: number) => {
+    if (o < -2 * SINGLE_W) return o + SINGLE_W;
+    if (o >= 0)            return o - SINGLE_W;
+    return o;
+  };
+
+  const paint = (o: number) => {
+    const cx = cwRef.current / 2;
+    if (trackRef.current) trackRef.current.style.transform = `translateX(${o}px)`;
+    ALL.forEach((_, i) => {
+      const el = itemRefs.current[i];
+      if (!el) return;
+      const dist = (o + i * STEP + ITEM_W / 2) - cx;
+      const t    = Math.min(1, Math.abs(dist) / (cwRef.current * 0.55));
+      const sc   = 1 - t * 0.08;
+      const op   = Math.max(0.35, 1 - t * 0.6);
+      el.style.transform = `scale(${sc})`;
+      el.style.opacity   = String(op);
+    });
+  };
+
+  useEffect(() => {
+    const measure = () => {
+      if (outerRef.current) cwRef.current = outerRef.current.offsetWidth;
+    };
+    measure();
+    window.addEventListener("resize", measure);
+
+    let raf: number;
+    const tick = () => {
+      if (!isDrag.current) {
+        if (!paused.current) off.current -= 0.6;
+        vel.current *= 0.91;
+        off.current += vel.current;
+        off.current = norm(off.current);
+      }
+      paint(off.current);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", measure);
+    };
+  }, []);
+
+  const onDown = (e: React.PointerEvent) => {
+    isDrag.current  = true;
+    didMove.current = false;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    startX.current = e.clientX - off.current;
+    prevX.current  = e.clientX;
+    vel.current    = 0;
+  };
+
+  const onMove = (e: React.PointerEvent) => {
+    if (!isDrag.current) return;
+    const d = e.clientX - prevX.current;
+    if (Math.abs(d) > 4) didMove.current = true;
+    vel.current   = d * 1.4;
+    prevX.current = e.clientX;
+    off.current   = norm(e.clientX - startX.current);
+    paint(off.current);
+  };
+
+  const onUp = () => { isDrag.current = false; };
 
   return (
-    <section id="resenas" className="py-28 md:py-36 bg-card overflow-hidden" ref={ref}>
+    <section id="resenas" className="py-28 md:py-36 bg-card overflow-hidden" ref={sectionRef}>
       <div className="max-w-7xl mx-auto px-5">
-        {/* Heading */}
         <motion.div
           initial={{ opacity: 0, y: 36 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -141,32 +188,106 @@ export function Reviews() {
               ))}
             </div>
             <span className="text-foreground font-medium text-sm">5.0</span>
-            <span className="text-muted-foreground text-sm">
-              · 214 reseñas en Google
-            </span>
+            <span className="text-muted-foreground text-sm">· 214 reseñas en Google</span>
           </div>
         </motion.div>
       </div>
 
-      {/* Infinite marquee — full bleed */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={isInView ? { opacity: 1 } : {}}
         transition={{ duration: 0.8, delay: 0.3 }}
-        className="relative"
       >
-        {/* Left + right fade masks */}
-        <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-24 z-10 bg-gradient-to-r from-card to-transparent" />
-        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-24 z-10 bg-gradient-to-l from-card to-transparent" />
+        {/* Edge fade masks */}
+        <div className="relative">
+          <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-28 z-10 bg-gradient-to-r from-card to-transparent" />
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-28 z-10 bg-gradient-to-l from-card to-transparent" />
 
-        <div className="flex overflow-hidden">
-          <div className="flex animate-marquee py-4">
-            {/* Duplicate the list for seamless loop */}
-            {[...reviews, ...reviews].map((review, i) => (
-              <ReviewCard key={`${review.id}-${i}`} review={review} />
-            ))}
+          <div
+            ref={outerRef}
+            className="overflow-hidden cursor-grab active:cursor-grabbing select-none py-6"
+            onMouseEnter={() => { paused.current = true; }}
+            onMouseLeave={() => { paused.current = false; }}
+            onPointerDown={onDown}
+            onPointerMove={onMove}
+            onPointerUp={onUp}
+            onPointerCancel={onUp}
+          >
+            <div
+              ref={trackRef}
+              className="flex items-stretch"
+              style={{ gap: GAP, willChange: "transform" }}
+            >
+              {ALL.map((review, i) => (
+                <div
+                  key={i}
+                  ref={el => { itemRefs.current[i] = el; }}
+                  style={{ width: ITEM_W, flexShrink: 0, willChange: "transform, opacity" }}
+                >
+                  <button
+                    draggable={false}
+                    onClick={() => {
+                      if (!didMove.current) window.open(GOOGLE_REVIEWS_URL, "_blank", "noopener,noreferrer");
+                    }}
+                    className="group block w-full h-full text-left focus:outline-none"
+                  >
+                    <div className="h-full rounded-[2rem] p-1.5 bg-foreground/[0.025] ring-1 ring-foreground/[0.07] transition-all duration-500 hover:ring-primary/30">
+                      <div className="h-full rounded-[calc(2rem-6px)] bg-background p-7 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9)] relative flex flex-col">
+                        {/* Quote */}
+                        <svg
+                          className="w-8 h-8 text-primary/25 absolute top-6 right-7"
+                          viewBox="0 0 32 32"
+                          fill="currentColor"
+                          aria-hidden="true"
+                        >
+                          <path d="M7 8C4.8 8 3 9.8 3 12s1.8 4 4 4c.6 0 1.1-.1 1.6-.3C8.2 17 7 18.9 7 21h3c0-3.9 3.2-7 6-7v-3c-2.5 0-4.8 1.1-6.3 2.9C9.3 13.4 9 12.7 9 12c0-1.1.9-2 2-2V8H7zm16 0c-2.2 0-4 1.8-4 4s1.8 4 4 4c.6 0 1.1-.1 1.6-.3-.4 1.3-1.6 3.3-1.6 5.3h3c0-3.9 3.2-7 6-7v-3c-2.5 0-4.8 1.1-6.3 2.9C25.3 13.4 25 12.7 25 12c0-1.1.9-2 2-2V8h-4z" />
+                        </svg>
+
+                        <div className="flex mb-4">
+                          {[...Array(review.rating)].map((_, j) => (
+                            <Star key={j} weight="fill" className="w-3.5 h-3.5 text-primary" />
+                          ))}
+                        </div>
+
+                        <p className="text-foreground leading-relaxed mb-7 text-[0.93rem] flex-1">
+                          &ldquo;{review.text}&rdquo;
+                        </p>
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={review.avatar}
+                              alt={review.name}
+                              width={40}
+                              height={40}
+                              draggable={false}
+                              className="w-10 h-10 rounded-full object-cover ring-2 ring-border"
+                            />
+                            <div>
+                              <p className="text-sm font-medium text-foreground">{review.name}</p>
+                              <p className="text-xs text-muted-foreground">{review.date}</p>
+                            </div>
+                          </div>
+                          {/* Google G icon */}
+                          <svg viewBox="0 0 24 24" className="w-5 h-5 opacity-30 group-hover:opacity-60 transition-opacity duration-300 shrink-0" aria-hidden="true">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
+
+        <p className="mt-3 text-center text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+          Arrastra para explorar · Clic para ver en Google
+        </p>
       </motion.div>
     </section>
   );
