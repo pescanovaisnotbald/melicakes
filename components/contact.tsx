@@ -81,7 +81,7 @@ export function Contact() {
             <div className="space-y-6">
               {[
                 {
-                  href: "https://maps.google.com/?q=Carrer+dels+Voluntaris+44+Terrassa",
+                  href: "https://www.google.com/maps/place/Meli%26Cakes/@41.577356,2.013275,17z/data=!4m6!3m5!1s0x12a493379d3d6315:0x368e96599e702383!8m2!3d41.577356!4d2.013275!16s%2Fg%2F11sfhr40r0?entry=ttu&g_ep=EgoyMDI2MDUwNi4wIKXMDSoASAFQAw%3D%3D",
                   icon: MapPin,
                   label: "Dirección",
                   text: "Carrer dels Voluntaris, 44, 08225 Terrassa",

@@ -280,7 +280,7 @@ export function Reviews() {
           </div>
         </div>
 
-        <div className="mt-8 flex flex-col items-center gap-3">
+        <div className="mt-8 flex justify-center">
           <a
             href={GOOGLE_REVIEWS_URL}
             target="_blank"
@@ -297,9 +297,6 @@ export function Reviews() {
               </svg>
             </span>
           </a>
-          <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
-            Arrastra para explorar · Clic en una reseña para ver en Google
-          </p>
         </div>
       </motion.div>
     </section>
