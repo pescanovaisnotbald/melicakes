@@ -1,8 +1,38 @@
 "use client";
 
-import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
+import { motion, useInView, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { useEffect, useLayoutEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Sparkle, Heart, Medal } from "@phosphor-icons/react";
+
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
+
+function CountUp({
+  to,
+  decimals = 0,
+  isInView,
+  delay = 0,
+}: {
+  to: number;
+  decimals?: number;
+  isInView: boolean;
+  delay?: number;
+}) {
+  const value = useMotionValue(0);
+  const spring = useSpring(value, { damping: 22, stiffness: 90, restDelta: 0.001 });
+  const display = useTransform(spring, (v) => v.toFixed(decimals));
+
+  useEffect(() => {
+    if (!isInView) return;
+    const t = setTimeout(() => value.set(to), delay);
+    return () => clearTimeout(t);
+  }, [isInView, to, delay, value]);
+
+  return <motion.span>{display}</motion.span>;
+}
 
 const features = [
   {
@@ -25,6 +55,35 @@ const features = [
 export function About() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
+  const imgWrapRef = useRef<HTMLDivElement>(null);
+
+  // Cinematic curtain reveal on the shop photo — a distinct, editorial motion
+  // language from the fades used elsewhere, reserved for this one hero image.
+  useLayoutEffect(() => {
+    const el = imgWrapRef.current;
+    if (!el) return;
+
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) {
+      gsap.set(el, { clipPath: "inset(0% 0% 0% 0%)" });
+      return;
+    }
+
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        el,
+        { clipPath: "inset(0% 0% 100% 0%)" },
+        {
+          clipPath: "inset(0% 0% 0% 0%)",
+          duration: 1.1,
+          ease: "power3.out",
+          scrollTrigger: { trigger: el, start: "top 85%", once: true },
+        }
+      );
+    }, imgWrapRef);
+
+    return () => ctx.revert();
+  }, []);
 
   return (
     <section id="nosotros" className="py-28 md:py-36 px-5 bg-card" ref={ref}>
@@ -38,7 +97,10 @@ export function About() {
           {/* Left — shop photo with double-bezel frame */}
           <div className="order-2 lg:order-1">
             <div className="rounded-[2rem] p-1.5 bg-foreground/[0.025] ring-1 ring-foreground/[0.06]">
-              <div className="rounded-[calc(2rem-6px)] overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]">
+              <div
+                ref={imgWrapRef}
+                className="rounded-[calc(2rem-6px)] overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]"
+              >
                 <img
                   src="/img/tienda.jpg"
                   alt="Interior de Meli&Cakes, Terrassa"
@@ -68,10 +130,14 @@ export function About() {
 
             <div className="flex items-center gap-5 mb-10">
               <div className="flex items-center gap-3">
-                <span className="text-4xl font-serif font-medium text-primary">5.0</span>
+                <span className="text-4xl font-serif font-medium text-primary tabular-nums">
+                  <CountUp to={5} decimals={1} isInView={isInView} delay={300} />
+                </span>
                 <div className="flex flex-col">
                   <span className="text-sm font-medium text-foreground">Estrellas</span>
-                  <span className="text-xs text-muted-foreground">214 reseñas Google</span>
+                  <span className="text-xs text-muted-foreground tabular-nums">
+                    <CountUp to={214} isInView={isInView} delay={300} /> reseñas Google
+                  </span>
                 </div>
               </div>
               <div className="w-px h-12 bg-border" />

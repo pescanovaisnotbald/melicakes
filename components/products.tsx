@@ -1,8 +1,68 @@
 "use client";
 
-import { motion, useInView, AnimatePresence } from "framer-motion";
-import { useRef, useState, useCallback } from "react";
+import {
+  motion,
+  useInView,
+  AnimatePresence,
+  useMotionValue,
+  useSpring,
+  useMotionTemplate,
+} from "framer-motion";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { X, ArrowLeft, ArrowRight } from "@phosphor-icons/react";
+
+// Decorative, spring-driven pointer tilt — desktop-only (fine pointer + real hover).
+// Springs (not a direct mouseX*factor mapping) so the card has momentum instead of
+// snapping 1:1 to the cursor, and settles back smoothly however fast the pointer leaves.
+function TiltCard({
+  children,
+  className,
+  onClick,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  onClick?: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const canTilt = useRef(false);
+
+  const rx = useMotionValue(0);
+  const ry = useMotionValue(0);
+  const springRx = useSpring(rx, { stiffness: 300, damping: 28, mass: 0.6 });
+  const springRy = useSpring(ry, { stiffness: 300, damping: 28, mass: 0.6 });
+  const transform = useMotionTemplate`perspective(900px) rotateX(${springRx}deg) rotateY(${springRy}deg)`;
+
+  useEffect(() => {
+    canTilt.current = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  }, []);
+
+  const handleMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!canTilt.current || !ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width - 0.5;
+    const py = (e.clientY - rect.top) / rect.height - 0.5;
+    ry.set(px * 5);
+    rx.set(py * -5);
+  };
+
+  const handleLeave = () => {
+    rx.set(0);
+    ry.set(0);
+  };
+
+  return (
+    <motion.div
+      ref={ref}
+      onPointerMove={handleMove}
+      onPointerLeave={handleLeave}
+      onClick={onClick}
+      style={{ transform, transformStyle: "preserve-3d" }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
 const categories = ["Todos", "Cupcakes", "Pasteles", "Especiales"];
 
@@ -186,9 +246,11 @@ export function Products() {
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6, delay: index * 0.07, ease: [0.16, 1, 0.3, 1] }}
               className={`group cursor-pointer ${product.span}`}
-              onClick={() => openLightbox(product.id)}
             >
-              <div className="h-full rounded-[2rem] p-1.5 bg-foreground/[0.025] ring-1 ring-foreground/[0.06] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:ring-primary/30">
+              <TiltCard
+                onClick={() => openLightbox(product.id)}
+                className="h-full rounded-[2rem] p-1.5 bg-foreground/[0.025] ring-1 ring-foreground/[0.06] transition-[box-shadow,--tw-ring-color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:ring-primary/30"
+              >
                 <div className="h-full rounded-[calc(2rem-6px)] bg-card overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]">
                   <div className={`relative ${product.imgClass} overflow-hidden bg-secondary/30`}>
                     <img
@@ -216,7 +278,7 @@ export function Products() {
                     </p>
                   </div>
                 </div>
-              </div>
+              </TiltCard>
             </motion.article>
           ))}
         </div>
@@ -261,7 +323,7 @@ export function Products() {
               initial={{ opacity: 0, scale: 0.94, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.94 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ type: "spring", bounce: 0, duration: 0.4 }}
               onClick={(e) => e.stopPropagation()}
               className="relative z-10 w-full max-w-3xl rounded-[2rem] overflow-hidden bg-card shadow-2xl"
             >

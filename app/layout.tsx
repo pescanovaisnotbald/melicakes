@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Playfair_Display, Outfit } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { MotionConfig } from 'framer-motion'
 import './globals.css'
 
 const playfair = Playfair_Display({
@@ -46,7 +47,9 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${playfair.variable} ${outfit.variable}`}>
       <body className="font-sans antialiased bg-background">
-        {children}
+        <MotionConfig reducedMotion="user">
+          {children}
+        </MotionConfig>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

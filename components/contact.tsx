@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useInView } from "framer-motion";
+import { motion, useInView, useAnimation } from "framer-motion";
 import { useRef, useState } from "react";
 import { MapPin, Phone, Clock, InstagramLogo, TiktokLogo } from "@phosphor-icons/react";
 
@@ -10,6 +10,7 @@ export function Contact() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const shakeControls = useAnimation();
 
   function validate(form: HTMLFormElement) {
     const data = new FormData(form);
@@ -28,7 +29,15 @@ export function Contact() {
     const form = e.currentTarget;
     const errs = validate(form);
     setErrors(errs);
-    if (Object.keys(errs).length > 0) return;
+    if (Object.keys(errs).length > 0) {
+      // Multi-point keyframes need a tween (springs only support two values);
+      // .start() still retargets cleanly if the user resubmits mid-shake.
+      shakeControls.start({
+        x: [0, -10, 8, -6, 4, 0],
+        transition: { duration: 0.4, ease: "easeInOut" },
+      });
+      return;
+    }
 
     const data = new FormData(form);
     setStatus("loading");
@@ -177,14 +186,26 @@ export function Contact() {
                   <motion.div
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    transition={{ type: "spring", bounce: 0, duration: 0.5 }}
                     className="py-12 flex flex-col items-center text-center gap-4"
                   >
-                    <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                    <motion.div
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                      className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center"
+                    >
                       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-primary">
-                        <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+                        <motion.path
+                          d="M20 6L9 17l-5-5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          initial={{ pathLength: 0 }}
+                          animate={{ pathLength: 1 }}
+                          transition={{ duration: 0.4, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                        />
                       </svg>
-                    </div>
+                    </motion.div>
                     <h4 className="font-serif text-xl text-foreground font-medium">¡Mensaje enviado!</h4>
                     <p className="text-sm text-muted-foreground max-w-[30ch]">
                       Nos pondremos en contacto contigo en breve.
@@ -197,7 +218,12 @@ export function Contact() {
                     </button>
                   </motion.div>
                 ) : (
-                <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+                <motion.form
+                  onSubmit={handleSubmit}
+                  animate={shakeControls}
+                  className="space-y-5"
+                  noValidate
+                >
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
                       <label htmlFor="name" className="block text-xs text-muted-foreground mb-1.5">
@@ -276,7 +302,7 @@ export function Contact() {
                       </>
                     ) : "Enviar Mensaje"}
                   </button>
-                </form>
+                </motion.form>
                 )}
               </div>
             </div>

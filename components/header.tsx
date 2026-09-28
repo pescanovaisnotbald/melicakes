@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const navLinks = [
@@ -13,6 +13,15 @@ const navLinks = [
 
 export function Header() {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  // Material thickens once real content is scrolling underneath it
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
     <>
@@ -23,7 +32,13 @@ export function Header() {
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         className="fixed top-5 inset-x-0 z-50 flex justify-center px-4"
       >
-        <nav className="flex items-center gap-6 rounded-full bg-primary/20 backdrop-blur-xl border border-primary/30 px-5 py-2.5 shadow-[0_8px_32px_-8px_rgba(194,86,107,0.18)]">
+        <nav
+          className={`flex items-center gap-6 rounded-full bg-primary/20 backdrop-blur-xl border border-primary/30 px-5 transition-[padding,box-shadow,border-color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+            scrolled
+              ? "py-2 shadow-[0_10px_40px_-8px_rgba(194,86,107,0.3)] border-primary/40"
+              : "py-2.5 shadow-[0_8px_32px_-8px_rgba(194,86,107,0.18)]"
+          }`}
+        >
           {/* Logo */}
           <a
             href="#inicio"
@@ -62,12 +77,12 @@ export function Header() {
           >
             <motion.span
               animate={open ? { rotate: 45, y: 5 } : { rotate: 0, y: 0 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ type: "spring", bounce: 0, duration: 0.4 }}
               className="block w-full h-px bg-foreground origin-center"
             />
             <motion.span
               animate={open ? { rotate: -45, y: -5 } : { rotate: 0, y: 0 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ type: "spring", bounce: 0, duration: 0.4 }}
               className="block w-full h-px bg-foreground origin-center"
             />
           </button>
@@ -78,10 +93,11 @@ export function Header() {
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            initial={{ opacity: 0, scale: 0.96, filter: "blur(8px)" }}
+            animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+            exit={{ opacity: 0, scale: 0.96, filter: "blur(8px)" }}
+            transition={{ type: "spring", bounce: 0, duration: 0.5 }}
+            style={{ transformOrigin: "top right" }}
             className="fixed inset-0 z-40 bg-primary/10 backdrop-blur-2xl flex flex-col items-center justify-center gap-2 md:hidden"
             onClick={() => setOpen(false)}
           >

@@ -5,6 +5,7 @@ import {
   motion,
   useScroll,
   useTransform,
+  useMotionTemplate,
   useReducedMotion,
 } from "framer-motion";
 import { ArrowRight } from "@phosphor-icons/react";
@@ -22,6 +23,9 @@ export function Hero() {
   const videoY     = useTransform(scrollYProgress, [0, 1], ["0%", "18%"]);
   // Subtle zoom-in as page loads / scrolls
   const videoScale = useTransform(scrollYProgress, [0, 1], [1, 1.06]);
+  // Combined into one transform string so the browser compositor can run this
+  // off the main thread even while the page is busy loading/painting
+  const videoTransform = useMotionTemplate`translateY(${videoY}) scale(${videoScale})`;
   // Overlay darkens slightly on scroll for depth
   const overlayOp  = useTransform(scrollYProgress, [0, 1], [0, 0.3]);
 
@@ -37,7 +41,7 @@ export function Hero() {
 
       {/* Video — parallax drift, no scrubbing */}
       <motion.div
-        style={prefersReduced ? {} : { y: videoY, scale: videoScale }}
+        style={prefersReduced ? {} : { transform: videoTransform }}
         className="absolute inset-0 origin-center will-change-transform"
       >
         <video
@@ -81,8 +85,26 @@ export function Hero() {
         </motion.span>
 
         <h1 className="font-serif text-[clamp(3.2rem,8vw,7rem)] font-medium tracking-tight leading-[0.93] text-foreground">
-          Dulzura hecha
-          <span className="block text-primary italic">a medida</span>
+          <span className="block overflow-hidden pb-1">
+            <motion.span
+              initial={{ y: "100%" }}
+              animate={{ y: "0%" }}
+              transition={{ type: "spring", bounce: 0, duration: 0.9, delay: 0.15 }}
+              className="block"
+            >
+              Dulzura hecha
+            </motion.span>
+          </span>
+          <span className="block overflow-hidden pb-1">
+            <motion.span
+              initial={{ y: "100%" }}
+              animate={{ y: "0%" }}
+              transition={{ type: "spring", bounce: 0, duration: 0.9, delay: 0.28 }}
+              className="block text-primary italic"
+            >
+              a medida
+            </motion.span>
+          </span>
         </h1>
 
         <motion.p

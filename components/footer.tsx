@@ -39,7 +39,13 @@ export function Footer() {
             className="text-sm text-muted-foreground flex items-center gap-1.5"
           >
             Hecho con{" "}
-            <Heart weight="fill" className="w-3.5 h-3.5 text-primary" />
+            <motion.span
+              animate={{ scale: [1, 1.18, 1] }}
+              transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 1.4, ease: "easeInOut" }}
+              className="inline-flex"
+            >
+              <Heart weight="fill" className="w-3.5 h-3.5 text-primary" />
+            </motion.span>
             {" "}en Terrassa
           </motion.p>
         </div>
