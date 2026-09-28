@@ -139,3 +139,39 @@ body::after {
   opacity: 0.035;
   mix-blend-mode: multiply;
 }
+
+/* Magic Bento product cards — cursor-tracked spotlight border, adapted from
+   React Bits' MagicBento to the Editorial Luxury blush palette (no particles/
+   neon — just the glow, tilt and magnetism, toned down for a pastry brand).
+   --glow-x/--glow-y/--glow-intensity are set imperatively in products.tsx. */
+@property --glow-intensity {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
+
+.magic-card {
+  --glow-x: 50%;
+  --glow-y: 50%;
+  --glow-intensity: 0;
+  transition: --glow-intensity 0.4s var(--ease-tasteful);
+}
+
+.magic-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  padding: 1.5px;
+  pointer-events: none;
+  background: radial-gradient(
+    260px circle at var(--glow-x) var(--glow-y),
+    oklch(from var(--primary) l c h / calc(var(--glow-intensity) * 0.95)) 0%,
+    oklch(from var(--primary) l c h / calc(var(--glow-intensity) * 0.35)) 40%,
+    transparent 68%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}

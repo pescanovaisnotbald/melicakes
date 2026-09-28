@@ -1,22 +1,42 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import {
   motion,
   useScroll,
   useTransform,
   useMotionTemplate,
+  useMotionValueEvent,
   useReducedMotion,
 } from "framer-motion";
 import { ArrowRight } from "@phosphor-icons/react";
 
 export function Hero() {
   const sectionRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const durationRef = useRef(0);
   const prefersReduced = useReducedMotion();
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start start", "end start"],
+  });
+
+  // Video is scroll-scrubbed, not autoplaying — it only moves when the user
+  // scrolls, and holds still otherwise instead of looping in the background.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const captureDuration = () => { durationRef.current = video.duration || 0; };
+    if (video.readyState >= 1) captureDuration();
+    video.addEventListener("loadedmetadata", captureDuration);
+    return () => video.removeEventListener("loadedmetadata", captureDuration);
+  }, []);
+
+  useMotionValueEvent(scrollYProgress, "change", (progress) => {
+    const video = videoRef.current;
+    if (!video || !durationRef.current || prefersReduced) return;
+    video.currentTime = progress * durationRef.current;
   });
 
   // Video drifts up slowly as user scrolls past (parallax)
@@ -39,16 +59,15 @@ export function Hero() {
   return (
     <section ref={sectionRef} className="relative h-[100dvh] overflow-hidden">
 
-      {/* Video — parallax drift, no scrubbing */}
+      {/* Video — playback scrubbed to scroll position, plus a slight parallax drift */}
       <motion.div
         style={prefersReduced ? {} : { transform: videoTransform }}
         className="absolute inset-0 origin-center will-change-transform"
       >
         <video
+          ref={videoRef}
           src="/img/heroanimation.mp4"
-          autoPlay
           muted
-          loop
           playsInline
           preload="auto"
           className="w-full h-full object-cover"

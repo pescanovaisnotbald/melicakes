@@ -11,10 +11,16 @@ import {
 import { useRef, useState, useCallback, useEffect } from "react";
 import { X, ArrowLeft, ArrowRight } from "@phosphor-icons/react";
 
-// Decorative, spring-driven pointer tilt — desktop-only (fine pointer + real hover).
-// Springs (not a direct mouseX*factor mapping) so the card has momentum instead of
-// snapping 1:1 to the cursor, and settles back smoothly however fast the pointer leaves.
-function TiltCard({
+// Cursor-tracked spotlight card — desktop-only (fine pointer + real hover).
+// Adapted from React Bits' MagicBento: the glow-ring + tilt + magnetism read
+// of that component, without its particles/neon, so it fits an editorial
+// pastry brand instead of a dark SaaS dashboard. Glow position/intensity are
+// plain CSS custom properties (see .magic-card in globals.css) updated
+// imperatively here — cheaper than routing every pointer move through React
+// state, and the ring's fade is a native CSS transition on --glow-intensity.
+// Tilt/magnetism stay on springs so the card has real momentum and settles
+// back smoothly regardless of how fast the pointer leaves.
+function MagicCard({
   children,
   className,
   onClick,
@@ -24,42 +30,71 @@ function TiltCard({
   onClick?: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const canTilt = useRef(false);
+  const canInteract = useRef(false);
 
   const rx = useMotionValue(0);
   const ry = useMotionValue(0);
-  const springRx = useSpring(rx, { stiffness: 300, damping: 28, mass: 0.6 });
-  const springRy = useSpring(ry, { stiffness: 300, damping: 28, mass: 0.6 });
-  const transform = useMotionTemplate`perspective(900px) rotateX(${springRx}deg) rotateY(${springRy}deg)`;
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const springOpts = { stiffness: 300, damping: 28, mass: 0.6 };
+  const springRx = useSpring(rx, springOpts);
+  const springRy = useSpring(ry, springOpts);
+  const springMx = useSpring(mx, springOpts);
+  const springMy = useSpring(my, springOpts);
+  const transform = useMotionTemplate`perspective(900px) translate(${springMx}px, ${springMy}px) rotateX(${springRx}deg) rotateY(${springRy}deg)`;
 
   useEffect(() => {
-    canTilt.current = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    canInteract.current = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
   }, []);
 
   const handleMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!canTilt.current || !ref.current) return;
+    if (!canInteract.current || !ref.current) return;
     const rect = ref.current.getBoundingClientRect();
     const px = (e.clientX - rect.left) / rect.width - 0.5;
     const py = (e.clientY - rect.top) / rect.height - 0.5;
     ry.set(px * 5);
     rx.set(py * -5);
+    mx.set(px * 10);
+    my.set(py * 10);
+    ref.current.style.setProperty("--glow-x", `${((e.clientX - rect.left) / rect.width) * 100}%`);
+    ref.current.style.setProperty("--glow-y", `${((e.clientY - rect.top) / rect.height) * 100}%`);
+    // Reasserted every move, not just on enter — self-heals if the 3D tilt
+    // ever shifts the hit-test box enough to cause a spurious enter/leave blip.
+    ref.current.style.setProperty("--glow-intensity", "1");
+  };
+
+  const handleEnter = () => {
+    if (!canInteract.current || !ref.current) return;
+    ref.current.style.setProperty("--glow-intensity", "1");
   };
 
   const handleLeave = () => {
     rx.set(0);
     ry.set(0);
+    mx.set(0);
+    my.set(0);
+    ref.current?.style.setProperty("--glow-intensity", "0");
   };
 
   return (
+    // Pointer handlers + rect live on this untransformed outer box, so the
+    // hit area never moves — only the inner layer below tilts. Applying the
+    // transform here instead would let the card rotate its own hit-test box
+    // out from under the cursor near the edges, causing a spurious pointerleave.
     <motion.div
       ref={ref}
       onPointerMove={handleMove}
+      onPointerEnter={handleEnter}
       onPointerLeave={handleLeave}
       onClick={onClick}
-      style={{ transform, transformStyle: "preserve-3d" }}
-      className={className}
+      className={`magic-card relative ${className ?? ""}`}
     >
-      {children}
+      <motion.div
+        style={{ transform, transformStyle: "preserve-3d" }}
+        className="h-full"
+      >
+        {children}
+      </motion.div>
     </motion.div>
   );
 }
@@ -247,9 +282,9 @@ export function Products() {
               transition={{ duration: 0.6, delay: index * 0.07, ease: [0.16, 1, 0.3, 1] }}
               className={`group cursor-pointer ${product.span}`}
             >
-              <TiltCard
+              <MagicCard
                 onClick={() => openLightbox(product.id)}
-                className="h-full rounded-[2rem] p-1.5 bg-foreground/[0.025] ring-1 ring-foreground/[0.06] transition-[box-shadow,--tw-ring-color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:ring-primary/30"
+                className="h-full rounded-[2rem] p-1.5 bg-foreground/[0.025] ring-1 ring-foreground/[0.06]"
               >
                 <div className="h-full rounded-[calc(2rem-6px)] bg-card overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]">
                   <div className={`relative ${product.imgClass} overflow-hidden bg-secondary/30`}>
@@ -278,7 +313,7 @@ export function Products() {
                     </p>
                   </div>
                 </div>
-              </TiltCard>
+              </MagicCard>
             </motion.article>
           ))}
         </div>
